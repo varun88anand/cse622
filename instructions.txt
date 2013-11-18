@@ -1,0 +1,16 @@
+File ---> Path to be copied to 
+NetworkManagementService.java - <AOSP ROOT>/frameworks/base/services/java/com/android/server
+ConnectivityServiceHelper.java - <AOSP ROOT>/frameworks/base/services/java/com/android/server
+ConnectivityService.java - <AOSP ROOT>/frameworks/base/services/java/com/android/server
+VibratorService.java - <AOSP ROOT>/frameworks/base/services/java/com/android/server
+com_android_server_VibratorService.cpp - <AOSP ROOT>/frameworks/base/services/jni
+Android.mk - <AOSP ROOT>/frameworks/base/services/jni
+su.c - <AOSP ROOT>/system/extras/su
+init.rc - <AOSP ROOT>/system/core/rootdir
+
+The following file has to be placed on phone as follows.
+File - rt_tables
+1) Remount /system partition as read-write.
+2) mkdir /etc/iproute2
+3) adb push rt_tables /etc/iproute2
+
