@@ -2801,8 +2801,8 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 							/* Manage the ip rule table */
 							ConnectivityService.info_3g = null;
 							// Update DNS with WIFI settings
-							if(ConnectivityService.info_wifi != null)
-								ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_WIFI);	
+							//if(ConnectivityService.info_wifi != null)
+							//	ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_WIFI);	
 							//	handleDnsConfigurationChange(ConnectivityManager.TYPE_WIFI);
 							ConnectivityService.helper.removeRule(type);
 						}
