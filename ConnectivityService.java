@@ -2745,11 +2745,13 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                     info = (NetworkInfo) msg.obj;
                     int type = info.getType();
                     // TAG: 622
-					if(type == ConnectivityManager.TYPE_MOBILE)
-						ConnectivityService.info_3g = info;
-					else if(type == ConnectivityManager.TYPE_WIFI)
-						ConnectivityService.info_wifi = info;
-
+					if(type == ConnectivityManager.TYPE_MOBILE || type == ConnectivityManager.TYPE_WIFI)
+					{
+						//synchronized(ConnectivityService.info_3g) {
+						//	ConnectivityService.info_3g = info;
+						//}
+						ConnectivityService.helper.changeState(type, info);
+					}
 					NetworkInfo.State state = info.getState();
 
                     if (VDBG || (state == NetworkInfo.State.CONNECTED) ||
@@ -2782,13 +2784,23 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                         /*	TAG - CSE622
 							we don't need to worry about removing entries from any routing tables. It gets handled automatically.
 						*/
+						
 						handleDisconnect(info);
+
+						SystemProperties.set("useboth", "0");
+						ConnectivityService.helper.commandShell("setprop useboth 0");
+						System.setProperty("useboth", "0");
+
 						if(type == ConnectivityManager.TYPE_WIFI) {
+							SystemProperties.set("wifi.up", "0");
+							System.setProperty("wifi.up", "0");
+							ConnectivityService.helper.commandShell("setprop wifi.up 0");
 							/* Manage the ip rule table
 							   Ex - ip rule del from <WIFI IP Address> table WIFI
 							*/
-							ConnectivityService.info_wifi = null;
 							
+							//ConnectivityService.info_wifi = null;
+							ConnectivityService.helper.changeState(type, null);
 							// Update DNS with 3G settings
 							if(ConnectivityService.info_3g != null)
 							{
@@ -2798,8 +2810,12 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 							}
 							ConnectivityService.helper.removeRule(type);
 						} else if(type == ConnectivityManager.TYPE_MOBILE) {
+							SystemProperties.set("mobile.up", "0");
+							System.setProperty("mobile.up","0");
+							ConnectivityService.helper.commandShell("setprop mobile.up 0");
 							/* Manage the ip rule table */
-							ConnectivityService.info_3g = null;
+							//ConnectivityService.info_3g = null;
+							ConnectivityService.helper.changeState(type, null);
 							// Update DNS with WIFI settings
 							//if(ConnectivityService.info_wifi != null)
 							//	ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_WIFI);	
@@ -2818,8 +2834,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                         handleDisconnect(info);
                     } else if (state == NetworkInfo.State.CONNECTED) {
                         
-						//if(ConnectivityService.info_3g != null)
-						//	ConnectivityService.helper.commandShell("su 0 ip route del default");
+						
 						/* Add routes and update rule list for the corrosponding interface */
 						handleConnect(info);
 						/* TAG - CSE622 
@@ -2831,17 +2846,40 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 						*/
 						
 						if(type == ConnectivityManager.TYPE_WIFI) {
-							if(ConnectivityService.info_3g != null)
-								ConnectivityService.helper.commandShell("su 0 ip route del default");
+							/* 622 - Set System-wide property */
+							SystemProperties.set("wifi.up", "1");
+							ConnectivityService.helper.commandShell("setprop wifi.up 1");
+							System.setProperty("wifi.up", "1");
+							if(ConnectivityService.info_3g != null) {
+								ConnectivityService.helper.commandShell("ip route del default");
+								SystemProperties.set("useboth", "1");
+								System.setProperty("useboth", "1");
+								ConnectivityService.helper.commandShell("setprop useboth 1");
+							}
 							ConnectivityService.helper.addDefaultRoute(type);
+							//synchronized(ConnectivityService.info_wifi) {
+							//	ConnectivityService.info_wifi.notifyAll();
+							//}
 						}
 						else if(type == ConnectivityManager.TYPE_MOBILE) {
+							SystemProperties.set("mobile.up", "1");
+							System.setProperty("mobile.up", "1");
+							ConnectivityService.helper.commandShell("setprop mobile.up 1");
 							if(ConnectivityService.info_wifi == null)
 								ConnectivityService.helper.addDefaultRoute(type);
 							else	/* We give priority to WIFI DNS settings over 3G */
+							{
 								handleDnsConfigurationChange(ConnectivityManager.TYPE_WIFI);
+								SystemProperties.set("useboth", "1");
+								System.setProperty("useboth", "1");
+								ConnectivityService.helper.commandShell("setprop useboth 1");
+							}
+							//synchronized(ConnectivityService.info_3g) {
+							//	ConnectivityService.info_3g.notifyAll();
+							//}
 						}
-                    }
+                    	
+					}
                     if (mLockdownTracker != null) {
                         mLockdownTracker.onNetworkInfoChanged(info);
                     }
