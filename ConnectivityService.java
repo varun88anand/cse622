@@ -137,12 +137,21 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 	public static NetworkInfo info_wifi = null;
 	public static NetworkInfo info_3g = null;
 	
+	public ConnectivityServer connServer = new ConnectivityServer();
 	public static ConnectivityServiceHelper helper = new ConnectivityServiceHelper();
 	//public native static void executeCommand(String cmd);
+	
+	public static Object lock = new Object();
 	static {
 		System.loadLibrary("android_servers");
 	}
 
+	
+	public static boolean getState(NetworkInfo obj) {
+		synchronized(ConnectivityService.lock) {
+			return ((obj == null) ? false:true);
+		}
+	}
 
     private static final boolean DBG = true;
     private static final boolean VDBG = false;

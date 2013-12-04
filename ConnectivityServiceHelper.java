@@ -17,12 +17,14 @@ public class ConnectivityServiceHelper {
     private wifiInfo oldWifi = new wifiInfo();
     private cdmaInfo oldCdma = new cdmaInfo();
 	
-	public synchronized void changeState(int type, NetworkInfo value)
+	public void changeState(int type, NetworkInfo value)
 	{
-		if(type == ConnectivityManager.TYPE_WIFI)
-			ConnectivityService.info_wifi = value;
-		else
-			ConnectivityService.info_3g = value;
+		synchronized(ConnectivityService.lock) {
+			if(type == ConnectivityManager.TYPE_WIFI)
+				ConnectivityService.info_wifi = value;
+			else
+				ConnectivityService.info_3g = value;
+		}
 	}
 	
 	public void addDefaultRoute(int type)
