@@ -6,6 +6,8 @@ import android.net.ConnectivityManager;
 import java.net.InetAddress;
 import android.net.RouteInfo;
 import java.util.Collection;
+import com.android.server.ConnectivityService;
+import android.net.NetworkInfo;
 
 public class ConnectivityServiceHelper {
 	
@@ -15,35 +17,43 @@ public class ConnectivityServiceHelper {
     private wifiInfo oldWifi = new wifiInfo();
     private cdmaInfo oldCdma = new cdmaInfo();
 	
+	public synchronized void changeState(int type, NetworkInfo value)
+	{
+		if(type == ConnectivityManager.TYPE_WIFI)
+			ConnectivityService.info_wifi = value;
+		else
+			ConnectivityService.info_3g = value;
+	}
+	
 	public void addDefaultRoute(int type)
 	{
-		String su = "su 0 ";
+		//String su = "su 0 ";
 		String cmd;
 		if(type == ConnectivityManager.TYPE_WIFI)
 		{
 			Log.i("622", "Adding Default route through WIFI for main table");
-			cmd = su + "ip route add default via " + newWifi.gateway;
+			cmd = "ip route add default via " + newWifi.gateway;
 		}
 		else
 		{
 			Log.i("622", "Adding Default route through CDMA for main table");
-			cmd = su + "ip route add default via " + newCdma.gateway;
+			cmd = "ip route add default via " + newCdma.gateway;
 		}
 		this.commandShell(cmd);
 	}
 
 	public void removeRule(int type)
 	{
-		String su = "su 0 ";
+		//String su = "su 0 ";
 		String cmd;
 		if(type == ConnectivityManager.TYPE_WIFI)
 		{
 			if(!newWifi.toString().equals(""))
 			{
 				Log.i("622", "Remove IP RULE for WIFI");
-				cmd = su + "ip rule del from " + newWifi.ipaddr + " table " + newWifi.table;
+				cmd = "ip rule del from " + newWifi.ipaddr + " table " + newWifi.table;
 				this.commandShell(cmd);
-				cmd = su + "ip rule del to " + newWifi.ipaddr + " table " + newWifi.table;
+				cmd = "ip rule del to " + newWifi.ipaddr + " table " + newWifi.table;
 				this.commandShell(cmd);
 				newWifi.ipaddr = newWifi.gateway = newWifi.link = "";
 			}
@@ -53,9 +63,9 @@ public class ConnectivityServiceHelper {
             if(!newCdma.toString().equals(""))
             {   
 				Log.i("622", "Remove IP RULE for CDMA");
-                cmd = su + "ip rule del from " + newCdma.ipaddr + " table " + newCdma.table;
+                cmd = "ip rule del from " + newCdma.ipaddr + " table " + newCdma.table;
                 this.commandShell(cmd);
-                cmd = su + "ip rule del to " + newCdma.ipaddr + " table " + newCdma.table;
+                cmd = "ip rule del to " + newCdma.ipaddr + " table " + newCdma.table;
                 this.commandShell(cmd);
                 newCdma.ipaddr = newCdma.gateway = newCdma.link = ""; 
             }   
@@ -64,30 +74,30 @@ public class ConnectivityServiceHelper {
 	
 	public void setupTable(int type)
 	{
-		String su = "su 0 ";
+		//String su = "su 0 ";
 		String cmd;
 		if(type == ConnectivityManager.TYPE_WIFI)
 		{
 			//this.commandShell("su 0 ip route list table WIFI");
-			cmd = su + "ip route add " + newWifi.link + " dev " + newWifi.iface + " src " + newWifi.ipaddr + " table " + newWifi.table;
+			cmd = "ip route add " + newWifi.link + " dev " + newWifi.iface + " src " + newWifi.ipaddr + " table " + newWifi.table;
 			this.commandShell(cmd);
-			cmd = su + "ip route add default via " + newWifi.gateway + " table " + newWifi.table;
+			cmd = "ip route add default via " + newWifi.gateway + " table " + newWifi.table;
 			this.commandShell(cmd);
-			cmd = su + "ip rule add from " + newWifi.ipaddr + " table " + newWifi.table;
+			cmd = "ip rule add from " + newWifi.ipaddr + " table " + newWifi.table;
 			this.commandShell(cmd);
-			cmd = su + "ip rule add to " + newWifi.ipaddr + " table " + newWifi.table;
+			cmd = "ip rule add to " + newWifi.ipaddr + " table " + newWifi.table;
 			this.commandShell(cmd);
 		}
 		else
 		{
 			//this.commandShell("su 0 ip route list table CDMA");
-            cmd = su + "ip route add " + newCdma.link + " dev " + newCdma.iface + " src " + newCdma.ipaddr + " table " + newCdma.table;
+            cmd = "ip route add " + newCdma.link + " dev " + newCdma.iface + " src " + newCdma.ipaddr + " table " + newCdma.table;
             this.commandShell(cmd);
-            cmd = su + "ip route add default via " + newCdma.gateway + " table " + newCdma.table;
+            cmd = "ip route add default via " + newCdma.gateway + " table " + newCdma.table;
             this.commandShell(cmd);
-            cmd = su + "ip rule add from " + newCdma.ipaddr + " table " + newCdma.table;
+            cmd = "ip rule add from " + newCdma.ipaddr + " table " + newCdma.table;
             this.commandShell(cmd);
-            cmd = su + "ip rule add to " + newCdma.ipaddr + " table " + newCdma.table;
+            cmd = "ip rule add to " + newCdma.ipaddr + " table " + newCdma.table;
 			this.commandShell(cmd);
 		}
 	}
@@ -113,8 +123,10 @@ public class ConnectivityServiceHelper {
 	public synchronized void commandShell(String cmd)
 	{
 		// Call to native function
-		Log.i("622", "To execute = " + cmd);
-		VibratorService.myexecuteCommand(cmd);
+		String su = "su 0 ";
+		String fCmd = su + cmd;
+		Log.i("622", "To execute = " + fCmd);
+		VibratorService.myexecuteCommand(fCmd);
 	}
 	
 	public String getLink(String ip)
