@@ -12,8 +12,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Map;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -28,20 +26,12 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 	private final String InitString = "Download status:";
+	private final String TestURL = "http://www-student.cse.buffalo.edu/~varunana/temp/100_MB.txt";//"http://www.google.com/robots.txt";
 	private final String DownloadDir = "/DownloadTest/";
-	private final String DownloadFile = "test.txt";
-	private final String MaxLength = "10000000";
+	private final String DownloadFile = "file.txt";
 	private final String TAG = "DownloadTest";
-	
-	//private final String TestURL = "http://www.google.com/robots.txt";
-	private final String TestURL = "http://www.ietf.org/rfc/bcp-index.txt";
-	
 	private TextView textView;
-	private EditText editText;
-	
-	private boolean continueDownload;
-	private int startByte;
-	private int endByte;
+	//private EditText editText;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +41,7 @@ public class MainActivity extends Activity {
 		textView = (TextView) findViewById(R.id.text_view);
 		textView.setMovementMethod(new ScrollingMovementMethod());
 		// Get editText id
-		editText = (EditText) findViewById(R.id.edit_message);
-		
-		continueDownload = true;
+		//editText = (EditText) findViewById(R.id.edit_message);
 	}
 
 	@Override
@@ -66,47 +54,27 @@ public class MainActivity extends Activity {
 	// Called when users click the start button
 	public void startTest(View view) {
 		// take piece size input
-		String pieceSize = editText.getText().toString();
-		if (!pieceSize.equals("")) {
-			textView.append("Input piece size: " + pieceSize + "\n");
-		} else {
-			pieceSize = MaxLength;
-			textView.append("No input piece size: Maximum range.");
-		}
-		
-		startByte = 0;		
+		//String pieceSize = editText.getText().toString();
 		//Log.d(TAG, "Input: " + editMsg);
-		
-		new DownloadFileTask().execute(TestURL, pieceSize);		
-	}
-	
-	public void stopTest(View view) {
-		continueDownload = false;
-	}
-	
-	public void resumeTest(View view) {
-		// take piece size input
-		textView.append("Downloading resumed:" + "\n");
-		String pieceSize = editText.getText().toString();
-		if (!pieceSize.equals("")) {
-			textView.append("Input piece size: " + pieceSize + "\n");
-		} else {
-			pieceSize = MaxLength;
-			textView.append("No input piece size: Maximum range.");
-		}
-		
-		continueDownload = true;
-		new DownloadFileTask().execute(TestURL, pieceSize);	
+		new DownloadFileTask().execute(TestURL);		
 	}
 	
 	private class DownloadFileTask extends AsyncTask<String, String, Void> {
 
 		@Override
 		protected Void doInBackground(String... params) {
+			// get a piece size first
+			//int pieceSize = 10000000;
+			/*if (!params[1].equals("")) {
+				pieceSize = Integer.parseInt(params[1]);
+				publishProgress("Input piece size: " + params[1]);
+			} else {
+				publishProgress("No input piece size. Download with maximum range.");
+			}*/
+			
 			// open output stream from file
 			File file = getFileInSdcard();
 			FileOutputStream outputStream = null;
-			
 			try {
 				outputStream = new FileOutputStream(file, true);
 			} catch (FileNotFoundException e) {
@@ -114,78 +82,56 @@ public class MainActivity extends Activity {
 				e.printStackTrace();
 			}
 			
-			// prepare HTTP URL connection and download piece size		
-			URL url = null;
+			// use HTTP URL to download file
+			boolean continueDownload = true;
+			/*int startByte = 0;
+			int endByte = startByte + pieceSize;
+			*/URL url = null;
 			HttpURLConnection urlConnection = null;
 			InputStream inputStream = null;
-			int pieceSize = Integer.parseInt(params[1]);
-			int maxSize = Integer.parseInt(MaxLength);
 			
-			// get object size from HTTP response header
-			try {
-				url = new URL(params[0]);
-				urlConnection = (HttpURLConnection)url.openConnection();
-				
-				// show header info in log
-				//getHttpResponseHeader(urlConnection);				
-
-				// show content length in log before downloading
-				//urlConnection.setRequestProperty("Range", "bytes=" + 0 + "-");
-				//urlConnection.setRequestProperty("Accept-Encoding", "identity");
-				Log.d(TAG, "pre-download file size is: " + getHttpContentLength(urlConnection));
-			} catch (MalformedURLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-						
-			// start downloading			
-			try {
-				while (continueDownload) {
-					//url = new URL(params[0]);
+			while (continueDownload) {
+				try {
+					url = new URL(params[0]);
 					urlConnection = (HttpURLConnection)url.openConnection();
-					urlConnection.setRequestProperty("Accept-Encoding", "identity");					
-					endByte = startByte + pieceSize - 1;					
-					urlConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);					
+					//urlConnection.setRequestProperty("Range", "bytes=" + startByte + "-" + endByte);
 					urlConnection.setDoInput(true);
-					urlConnection.setDoOutput(true);					
-					
-					Log.d(TAG, "in-download file size is: " + getHttpContentLength(urlConnection));										
-					
+					urlConnection.setDoOutput(true);
+					publishProgress("Downloading..."); 
 					inputStream = new BufferedInputStream(urlConnection.getInputStream());
 					// getContentLength() doesn't work.
 					//int fileSize = urlConnection.getContentLength();
 					
-					if (pieceSize != maxSize)
-						publishProgress("Downloading range: " + (startByte + 1) + " - " + (endByte + 1));
+					//range: " + startByte + " - " + endByte);
 					// save output stream to file
 					saveStreamToSdcard(inputStream, outputStream);
 					
 					// next download range
-					startByte+=pieceSize;					
+					/*startByte+=(pieceSize+1);
+					endByte = startByte + pieceSize;
+					*/continueDownload = false;
+					publishProgress("Done...");
 					//printStream(in);
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					Log.d(TAG, "out of range");
+					continueDownload = false;
+					//e.printStackTrace();
+				} finally {
+					urlConnection.disconnect();
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				Log.d(TAG, "out of range");
-				continueDownload = false;
-				publishProgress("Downloading is done.");
-				//e.printStackTrace();
-			} finally {
-				urlConnection.disconnect();
 			}
 			
-			
-			// close output stream
 			try {
 				outputStream.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+			publishProgress("Downloading is done.");
 			return null;
 		}
 		
@@ -231,29 +177,6 @@ public class MainActivity extends Activity {
 				e.printStackTrace();
 			} 
 		}
-		
-		// Show HTTP Response Header in log
-		private void getHttpResponseHeader(HttpURLConnection urlConnection) {
-			Map<String, List<String>> map = urlConnection.getHeaderFields();
-			for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-				Log.d(TAG, "Key : " + entry.getKey() + ", Value : " + entry.getValue());
-			}
-		}
-		
-		// Get content length from HTTP Response Header before hand (before downloading) 
-		private String getHttpContentLength(HttpURLConnection urlConnection) {			
-			//urlConnection.setDoInput(true);
-			//urlConnection.setDoOutput(true);
-			String sLength = null;
-			List values = urlConnection.getHeaderFields().get("content-length");
-			if (values != null && !values.isEmpty()) {
-				sLength = (String) values.get(0);				
-			} else {
-				sLength = "empty";
-			}
-	
-			return sLength;
-		}
 				
 		//@Override
 		protected void onProgressUpdate(String... params) {
@@ -265,14 +188,10 @@ public class MainActivity extends Activity {
 	// Called when users click the clean button
 	public void cleanTest(View view) {
 		textView.setText(InitString + "\n");
-		editText.setText("");
-		
 		// delete download file if existing
 		File sdCard = Environment.getExternalStorageDirectory();
 		File sdFile = new File(sdCard.getAbsolutePath() + DownloadDir + DownloadFile);
 		if (sdFile.exists())
 			sdFile.delete();
-		
-		continueDownload = true;
 	}
 }

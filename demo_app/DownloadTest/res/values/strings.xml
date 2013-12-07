@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Download Test</string>
+    <string name="action_settings">Settings</string>
+    <string name="button_start">Start</string>
+    <string name="button_clean">Clean</string>
+    <string name="download_status">Download status:\n</string>
+    <string name="edit_message">Piece size (bytes)</string>
+
+</resources>

@@ -47,7 +47,7 @@ class ThreadWorker extends Thread {
 		BufferedReader inFromClient = new BufferedReader(new InputStreamReader(in));
 		String clientInput;
 		while(!(clientInput = inFromClient.readLine()).equals("exit")) {
-			Log.i("CSE622", "Input From CLient = " + clientInput);			
+			//Log.i("CSE622", "Input From CLient = " + clientInput);			
 			String toSend = "";
 			if(clientInput.equals("wifi"))
 			{
