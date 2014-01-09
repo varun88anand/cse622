@@ -95,9 +95,6 @@ loglevel 3
     write /proc/sys/kernel/sched_rt_runtime_us 950000
     write /proc/sys/kernel/sched_rt_period_us 1000000
 	
-# TAG622 - Create directory for ip utility 
-#	mkdir /system/etc/iproute2
-
 
 # Create cgroup mount points for process groups
     mkdir /dev/cpuctl
@@ -241,7 +238,10 @@ on post-fs-data
     # create the lost+found directories, so as to enforce our permissions
     mkdir /data/lost+found 0770 root root
 
-    # create directory for DRM plug-ins - give drm the read/write access to
+	# TAG622 - Create directory for ip utility 
+    mkdir /etc/iproute2 0777 root root
+
+	# create directory for DRM plug-ins - give drm the read/write access to
     # the following directory.
     mkdir /data/drm 0770 drm drm
 
@@ -524,3 +524,5 @@ service mdnsd /system/bin/mdnsd
     socket mdnsd stream 0660 mdnsr inet
     disabled
     oneshot
+
+
