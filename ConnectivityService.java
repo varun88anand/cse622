@@ -2817,7 +2817,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 								/* Add default route corrosponding to 3G network */
 								ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_MOBILE);
 							}
-							ConnectivityService.helper.removeRule(type);
+							//ConnectivityService.helper.removeRule(type);
 						} else if(type == ConnectivityManager.TYPE_MOBILE) {
 							//SystemProperties.set("mobile.up", "0");
 							//System.setProperty("mobile.up","0");
@@ -2829,8 +2829,9 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 							//if(ConnectivityService.info_wifi != null)
 							//	ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_WIFI);	
 							//	handleDnsConfigurationChange(ConnectivityManager.TYPE_WIFI);
-							ConnectivityService.helper.removeRule(type);
+							//ConnectivityService.helper.removeRule(type);
 						}
+							ConnectivityService.helper.removeRule(type);
 						
                     } else if (state == NetworkInfo.State.SUSPENDED) {
                         // TODO: need to think this over.

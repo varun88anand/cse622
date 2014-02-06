@@ -71,6 +71,7 @@ public class VibratorService extends IVibratorService.Stub
     native static boolean vibratorExists();
     native static void vibratorOn(long milliseconds);
     native static void vibratorOff();
+	// TAG - 622
 	native static void myexecuteCommand(String cmd);
 
 

@@ -86,10 +86,10 @@ public class HttpWorker extends Thread {
 			RawHeaders tmpHeader = new RawHeaders();
 			tmpHeader.set("Range", "bytes=" + start + "-" + end);
 			HttpEngine engine = null;
-			if(!redirection)
+			//if(!redirection)
 				engine = new HttpEngine(impl, method, tmpHeader, null, null);
-			else /* 302 - Client is not allowed to change the request method, however most of the user-agents modify it to GET*/
-				engine = new HttpEngine(impl, method/*HttpEngine.GET*/, tmpHeader, null, null);
+			//else /* 302 - Client is not allowed to change the request method, however most of the user-agents modify it to GET*/
+			//	engine = new HttpEngine(impl, method/*HttpEngine.GET*/, tmpHeader, null, null);
 			//engine.updateHeader(tmpHeader);
 			System.out.println("622 - Worker: <" + type + ">...sending to " + impl.mUrl.toString() + " ........bytes=" + start + " - " + end);
 			
@@ -152,24 +152,28 @@ public class HttpWorker extends Thread {
 				//synchronized(helper.lock) {
 
 				InputStream result = engine.getResponseBody();
-				if(result != null) {
-					System.out.println("622 - Worker: <" + type + ">...Inserting to map, KEY = " + start);
-					helper.insertResultToMap(start, result); 
-				}
-				else {
-					System.out.println("622 - Worker: <" + type + ">... NULL INPUTSTREAM FOR KEY = " + start);
-				}
 				redirectionCount = 0;
 				redirection = false;
 				/* Fix for CaptivePortal tracker - 204 */
-				/* Fix for 200. Some servers like wikipedia return 200 instead of 206 (We include range in header field) */
+				/* Fix for HTTP_OK - 200. Some servers like wikipedia return 200 instead of 206 i.e. these servers does not serve byte-range requests */
 				if(responseCode == HttpURLConnection.HTTP_NO_CONTENT /*204*/ || responseCode == HttpURLConnection.HTTP_OK/*200*/)
 				{
 					done();
 					impl.httpEngine = engine;
 					System.out.println("622 - Worker: <" + type + ">... No Content <204> OR 200 ok ... exiting");
+					/* There should be just one inputstream and that's it! */
+					helper.insertResultToMap(0,result);
 					return;
 				}
+
+                if(result != null) {
+                    System.out.println("622 - Worker: <" + type + ">...Inserting to map, KEY = " + start);
+                    helper.insertResultToMap(start, result); 
+                }   
+                else {
+                    System.out.println("622 - Worker: <" + type + ">... NULL INPUTSTREAM FOR KEY = " + start);
+                }   
+
 			}
 			/*
 			else
