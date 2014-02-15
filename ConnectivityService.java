@@ -148,9 +148,14 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 
 	
 	public static boolean getState(NetworkInfo obj) {
-		synchronized(ConnectivityService.lock) {
-			return ((obj == null) ? false:true);
+		if(obj != null) {
+			synchronized(ConnectivityService.lock) {
+				NetworkInfo.State state = obj.getState();
+				if (state == NetworkInfo.State.CONNECTED)
+					return true;
+			}
 		}
+		return false;
 	}
 
     private static final boolean DBG = true;
@@ -2213,15 +2218,12 @@ public class ConnectivityService extends IConnectivityManager.Stub {
         if (mNetTrackers[netType].getNetworkInfo().isConnected()) {
             newLp = mNetTrackers[netType].getLinkProperties();
             // TAG - 622
-			if (/*VDBG*/ true) {
-                /*log*/Log.i("622","handleConnectivityChange: changed linkProperty[" + netType + "]:" +
+            Log.i("622","handleConnectivityChange: changed linkProperty[" + netType + "]:" +
                         " doReset=" + doReset + " resetMask=" + resetMask +
                         "\n   curLp=" + curLp +
                         "\n   newLp=" + newLp);
-            
 			if(netType == ConnectivityManager.TYPE_WIFI || netType == ConnectivityManager.TYPE_MOBILE)
 				ConnectivityService.helper.setInfo(newLp, netType);
-			}
 
             if (curLp != null) {
                 if (curLp.isIdenticalInterfaceName(newLp)) {
@@ -2817,7 +2819,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 								/* Add default route corrosponding to 3G network */
 								ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_MOBILE);
 							}
-							//ConnectivityService.helper.removeRule(type);
+							ConnectivityService.helper.removeRule(type);
 						} else if(type == ConnectivityManager.TYPE_MOBILE) {
 							//SystemProperties.set("mobile.up", "0");
 							//System.setProperty("mobile.up","0");
@@ -2829,9 +2831,8 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 							//if(ConnectivityService.info_wifi != null)
 							//	ConnectivityService.helper.addDefaultRoute(ConnectivityManager.TYPE_WIFI);	
 							//	handleDnsConfigurationChange(ConnectivityManager.TYPE_WIFI);
-							//ConnectivityService.helper.removeRule(type);
-						}
 							ConnectivityService.helper.removeRule(type);
+						}
 						
                     } else if (state == NetworkInfo.State.SUSPENDED) {
                         // TODO: need to think this over.
@@ -2842,10 +2843,14 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                         // opportunity to handle DISCONNECTED and SUSPENDED
                         // differently, or not.
                         handleDisconnect(info);
-                    } else if (state == NetworkInfo.State.CONNECTED) {
+						Log.i("622", "ConnectivityService: - Network type = " + type + " SUSPENDED!!!"); 
+                    	//ConnectivityService.helper.changeState(type, null);
+					} else if (state == NetworkInfo.State.CONNECTED) {
                         
-						
 						/* Add routes and update rule list for the corrosponding interface */
+						//if(netType == ConnectivityManager.TYPE_WIFI || netType == ConnectivityManager.TYPE_MOBILE)
+     					//	ConnectivityService.helper.setInfo(newLp, netType);
+
 						handleConnect(info);
 						
 						ConnectivityService.helper.changeState(type, info);

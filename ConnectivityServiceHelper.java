@@ -30,13 +30,13 @@ public class ConnectivityServiceHelper {
 	public void addDefaultRoute(int type)
 	{
 		//String su = "su 0 ";
-		String cmd;
+		String cmd = null;
 		if(type == ConnectivityManager.TYPE_WIFI)
 		{
 			Log.i("622", "Adding Default route through WIFI for main table");
 			cmd = "ip route add default via " + newWifi.gateway;
 		}
-		else
+		else if(type == ConnectivityManager.TYPE_MOBILE)
 		{
 			Log.i("622", "Adding Default route through CDMA for main table");
 			cmd = "ip route add default via " + newCdma.gateway;
@@ -60,7 +60,7 @@ public class ConnectivityServiceHelper {
 				newWifi.ipaddr = newWifi.gateway = newWifi.link = "";
 			}
 		}
-		else
+		else if(type == ConnectivityManager.TYPE_MOBILE)
 		{
             if(!newCdma.toString().equals(""))
             {   
@@ -90,7 +90,7 @@ public class ConnectivityServiceHelper {
 			cmd = "ip rule add to " + newWifi.ipaddr + " table " + newWifi.table;
 			this.commandShell(cmd);
 		}
-		else
+		else if(type == ConnectivityManager.TYPE_MOBILE)
 		{
 			//this.commandShell("su 0 ip route list table CDMA");
             cmd = "ip route add " + newCdma.link + " dev " + newCdma.iface + " src " + newCdma.ipaddr + " table " + newCdma.table;
@@ -167,7 +167,7 @@ public class ConnectivityServiceHelper {
 			return;
 		}
 		
-		Log.i("622", "Checkpoint - 1");
+		//Log.i("622", "Checkpoint - 1");
 		this.oldWifi.ipaddr = this.newWifi.ipaddr;
 		this.oldWifi.gateway = this.newWifi.gateway;
 		this.oldWifi.link = this.newWifi.link;
