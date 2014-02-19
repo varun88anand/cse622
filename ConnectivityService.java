@@ -2411,13 +2411,15 @@ public class ConnectivityService extends IConnectivityManager.Stub {
             key = "net.tcp.buffersize.default";
             bufferSizes = SystemProperties.get(key);
         }
-
-        // Set values in kernel
+		
+		//bufferSizes = "524288,1048576,2097152,262144,524288,1048576";
+        
+		// Set values in kernel
         if (bufferSizes.length() != 0) {
-            if (VDBG) {
-                log("Setting TCP values: [" + bufferSizes
+            //if (VDBG) {
+                Log.i("622", "Overriding defaults - Setting TCP values: [" + bufferSizes
                         + "] which comes from [" + key + "]");
-            }
+            //}
             setBufferSize(bufferSizes);
         }
     }

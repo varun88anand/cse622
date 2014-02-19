@@ -127,32 +127,6 @@ public class HttpEngine {
     private OutputStream requestOut;
     private AbstractHttpOutputStream requestBodyOut;
 
-    /*NNN 622 NNN*/
-    //protected HttpConnection wifiConnection;
-    //protected HttpConnection mobileConnection;
-    
-    //private InputStream wifiSocketIn;
-    //private InputStream mobileSocketIn;
-    
-    //private OutputStream wifiSocketOut;
-    //private OutputStream mobileSocketOut;
-
-    //private OutputStream wifiRequestOut;
-    //private OutputStream mobileRequestOut;
-    
-    //private AbstractHttpOutputStream wifiRequestBodyOut;
-    //private AbstractHttpOutputStream mobileRequestBodyOut;
-	
-    //private RequestHeaders wifiReqHeaders;
-    //private RequestHeaders mobileReqHeaders;	
-
-    //private ResponseHeaders wifiRespHeaders;
-    //private ResponseHeaders mobileRespHeaders;
-	
-    //public HttpHelper httpHelper;
- 
-    /*NNN 622 NNN*/
-
     private InputStream responseBodyIn;
 
     private final ResponseCache responseCache = ResponseCache.getDefault();
@@ -348,31 +322,9 @@ public class HttpEngine {
      * Connect to the origin server either directly or via a proxy.
      */
     protected void connect() throws IOException {
-	/*
-	if (httpHelper.useBoth) {
-	    if (wifiConnection == null) {
-		HttpHelper.INSTANCE.connectionFor("wifi");
-	    	wifiConnection = openSocketConnection();
-	    }	
-	    if (mobileConnection == null) {
-		HttpHelper.INSTANCE.connectionFor("mobile");
-                mobileConnection = openSocketConnection();
-	    }	
-	}        
-	*/
-	if (connection == null) {
+		if (connection == null) {
             connection = openSocketConnection();
         }
-	/*NNN 622 new 
-	if(httpHelper.useBoth) {
-	    if(httpHelper.WIFI && httpHelper.wifiConnection == null) { 
-		httpHelper.wifiConnection  = connection;	
-	    }	
-	    if (httpHelper.MOBILE && httpHelper.mobileConnection == null) {
-		httpHelper.mobileConnection = connection;
-	    }	
-	}
-	*/
     }
 
     protected final HttpConnection openSocketConnection() throws IOException {

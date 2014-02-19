@@ -24,6 +24,7 @@ import java.net.SocketException;
 import libcore.io.IoUtils;
 import libcore.util.Objects;
 import java.util.LinkedList;
+import java.util.HashMap;
 /**
 
  */
@@ -46,14 +47,29 @@ public class HttpHelper {
 	private LinkedList<Integer> missingChunks;
 
 	public Object lock;
-	private final int noOfBuckets = 6;
+	/* Minimum value should be 4, 2 buckets for each worker and 2 for the SPECIAL case */
+	private final int noOfBuckets = 4;//6;
 	private InputStream noByteRequestSupport = null;
 	public ByteArrayBackedInputStream bArrInpStream = null;
 	
 	public static Object joinLock = new Object();
+	
+	private class Stats {
+		public long startTime;
+		public long endTime;
+		public int type;
+		
+		public Stats(long start, long end, int type) {
+			startTime = start;
+			endTime = end;
+			this.type = type;
+		}
+	}
+
+	private HashMap<Integer, Stats> statistics;
 
 	public HttpHelper(){
-		chunkSize = 1000000;
+		chunkSize = 100;// 100 bytes
 		marker = 0;
 		lock = new Object();
 		isComplete = false;
@@ -61,6 +77,49 @@ public class HttpHelper {
 		supportByteRequest = true;
 		bArrInpStream = new ByteArrayBackedInputStream(this, noOfBuckets, chunkSize);
 		missingChunks = new LinkedList<Integer>();
+		statistics = new HashMap<Integer, Stats>(400);
+	}
+
+	public void dumpStatistics(int wifiBytes, int mobileBytes, int total) {
+		System.out.println("622 - **************STATISTICS********************");
+		int start = 0;
+		long totalTime = 0;
+		long wifiTime = 0;
+		long mobileTime = 0;
+		int wifiDownloads = 0;
+		int mobileDownloads = 0;
+		for(int i=0; i< statistics.size(); i++) {
+			Stats obj = statistics.get(start);
+			long time = (obj.endTime - obj.startTime);
+			String type = (obj.type == 1)?"WIFI":"MOBILE";
+			System.out.println("622: Start = " + start + " || Time(ms) = " + time + " || Type = " + type);  
+			if(obj.type == 1) {
+				wifiTime += time;
+				wifiDownloads++;
+			}
+			else {
+				mobileTime += time;
+				mobileDownloads++;
+			}
+			start += chunkSize;
+			//totalTime += time;
+		}
+		/* Total time is the greater of the two, because they overlap */
+		totalTime = (wifiTime > mobileTime)?wifiTime:mobileTime;
+		float netRate = (float)(total/1024)/(float)(totalTime/1000);
+		float wifiRate = (float)(wifiBytes/1024)/(float)(wifiTime/1000);
+		float mobileRate = (float)(mobileBytes/1024)/(float)(mobileTime/1000);
+		System.out.println("622 - *****************************Results*******************************");
+		System.out.println("622: Wifi: #chunks = " + wifiDownloads + " || time taken(ms) = " + wifiTime + " || #bytes = "
+							+ wifiBytes + " || Download Rate(kbps) = " + wifiRate);
+		System.out.println("622: Mobile: #chunks = " + mobileDownloads + " || time taken(ms) = " + mobileTime + " || #bytes = "
+							+ mobileBytes + " || Download Rate(kbps) = " + mobileRate);
+		System.out.println("622: Downloaded total " + total + " bytes in " + totalTime + " ms" + " at an average rate = " + netRate);
+	}
+
+	public synchronized void insertStatistics(int chunkStart, long start, long end, int type) {
+		Stats obj = new Stats(start, end, type);
+		statistics.put(chunkStart, obj);
 	}
 	
 	public int getChunkSize() {

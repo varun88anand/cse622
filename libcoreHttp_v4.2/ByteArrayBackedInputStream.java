@@ -3,7 +3,7 @@ package libcore.net.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-
+import java.util.HashSet;
 /*
 								Special Case - 
 	Both workers are running and one of them is slow to an extent that, 
@@ -16,7 +16,9 @@ import java.util.HashMap;
 
 public class ByteArrayBackedInputStream extends InputStream {
 	private HashMap<Integer, byte[]> bucket;
-    private int noOfBuckets;
+    private HashSet<Integer> completedChunks;
+	
+	private int noOfBuckets;
 	private int maxCap;
     private int size;
 	
@@ -38,6 +40,7 @@ public class ByteArrayBackedInputStream extends InputStream {
 	public ByteArrayBackedInputStream(HttpHelper helper, int noOfBuckets, int size) {
 		this.helper = helper;
 		bucket = new HashMap<Integer, byte[]>(noOfBuckets);
+		completedChunks = new HashSet<Integer>();
 		this.noOfBuckets = noOfBuckets;
 		maxCap = noOfBuckets - 2;
 		this.size = size;
@@ -55,9 +58,9 @@ public class ByteArrayBackedInputStream extends InputStream {
 		return mobileCounter;
 	}
 	
-    public void write(int key, byte arr[], int TYPE, int length) throws InterruptedException {
+    public void write(int key, byte arr[], int TYPE, int length, long startTime, long endTime) throws InterruptedException {
         synchronized(lock) {
-            if(bucket.containsKey(key)) {
+            if(completedChunks.contains(key)) {
             	return;
             }
         	if(bucket.size() == maxCap && !isSpecialCase) {
@@ -73,10 +76,14 @@ public class ByteArrayBackedInputStream extends InputStream {
 			}
 			System.out.println("622: ByteArrayBackedInputStream write()- Inserting KEY = " + key + " to the buffer");
             bucket.put(key, arr);
-            ++writes;
+			completedChunks.add(key);
+            if(arr != null) {
+				helper.insertStatistics(key, startTime, endTime, TYPE);
+				++writes;
+			}
 			if(TYPE == WIFI)
                 wifiCounter += length;
-            else
+            else if(TYPE == MOBILE)
                 mobileCounter += length;
 			
 			
@@ -96,7 +103,9 @@ public class ByteArrayBackedInputStream extends InputStream {
         synchronized(helper.lock) {
 			if(reads == writes && helper.isComplete) {
         		System.out.println("622: ByteArrayBackedInputStream read() - Nothing to read, Download Complete");
-        		return -1;
+        		int total = wifi_bytes() + mobile_bytes();
+				helper.dumpStatistics(wifi_bytes(), mobile_bytes(), total);
+				return -1;
         	}
 		}
         synchronized(lock) {
@@ -126,11 +135,13 @@ public class ByteArrayBackedInputStream extends InputStream {
 				byte data[] = bucket.get(nextReadKey);
                 if(data == null) {
 					System.out.println("622: ByteArrayBackedInputStream read() - Nothing to read, Download Complete");
+					int total = wifi_bytes() + mobile_bytes();
+					//System.out.println("622 - STATISTICS: WIFI = " + wifiCounter + "/" + total + " and MOBILE = " + mobileCounter + "/" + total);
+					helper.dumpStatistics(wifi_bytes(), mobile_bytes(), total);
 					return -1;
 				}
 				System.arraycopy(data, 0, bytes, 0, data.length);
-                bucket.put(nextReadKey, null);
-				// - Instead of removing key-value pairs from HashMap, change the value to null
+                bucket.remove(nextReadKey);
 				nextReadKey += size;
                 ++reads;
                 lock.notifyAll();

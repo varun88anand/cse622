@@ -45,6 +45,7 @@ public class HttpWorker extends Thread {
 		boolean runOnceMore = true;
 		byte data[] = new byte[chunkSize];
 		
+
 		while(true) {
 		if(flag == 1)
 			break;
@@ -115,15 +116,20 @@ public class HttpWorker extends Thread {
 			engine.readResponse();
 			int responseCode = engine.getResponseCode();
 			System.out.println("622 - Worker: <" + type + ">...response code for bytes = " + start + " - " + end + " == " + responseCode);
-			if (responseCode >= 400/*HTTP_BAD_REQUEST*/) {
+			
+			if(responseCode == 504) {
+				System.out.println("622 - Worker: <" + type + ">...Response Code = 504, Gateway timed out...Retry...");
+				helper.insertToMissingList(start);
+			}
+			else if (responseCode >= 400/*HTTP_BAD_REQUEST*/) {
 				flag = 1;
 				done();
 				System.out.println("622 - BAD Request for Worker: <" + type + ">...sending" + " bytes=" + start + " - " + end);
-				helper.bArrInpStream.write(start, null, 1, 0);
-				int wifiBytes = helper.bArrInpStream.wifi_bytes();
-				int mobileBytes = helper.bArrInpStream.mobile_bytes();
-				int total = wifiBytes + mobileBytes;
-				System.out.println("622 - STATISTICS: WIFI = " + wifiBytes + "/" + total + " and MOBILE = " + mobileBytes + "/" + total);
+				helper.bArrInpStream.write(start, null, -1, 0, 0, 0);
+				//int wifiBytes = helper.bArrInpStream.wifi_bytes();
+				//int mobileBytes = helper.bArrInpStream.mobile_bytes();
+				//int total = wifiBytes + mobileBytes;
+				//System.out.println("622 - STATISTICS: WIFI = " + wifiBytes + "/" + total + " and MOBILE = " + mobileBytes + "/" + total);
 			}
 			else if(responseCode == HttpURLConnection.HTTP_MULT_CHOICE || responseCode == HttpURLConnection.HTTP_MOVED_PERM
 						|| responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_SEE_OTHER) 			 
@@ -153,7 +159,6 @@ public class HttpWorker extends Thread {
 				redirection = true;
 				//engine.release(true);
 			}
-		
 			else/*Successful*/ {
 
 				InputStream result = engine.getResponseBody();
@@ -182,15 +187,18 @@ public class HttpWorker extends Thread {
 					int nRead;
 					int bytesRead = 0;
 					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+					long startTime = System.currentTimeMillis();
 					while ((nRead = result.read(data, 0, data.length)) != -1) {
   						buffer.write(data, 0, nRead);
 						bytesRead += nRead;
 					}
+					long endTime = System.currentTimeMillis();
 					buffer.flush();
 					data = buffer.toByteArray();
 					System.out.println("622 - Worker: <" + type + ">... KEY = " + start + " read bytes = " + bytesRead + "/" + chunkSize);
 					int TYPE = (type.equals("wifi")) ? 1:2;
-					helper.bArrInpStream.write(start, data, TYPE, bytesRead);
+					//helper.insertStatistics(start, startTime, endTime, TYPE);
+					helper.bArrInpStream.write(start, data, TYPE, bytesRead, startTime, endTime);
 				}   
                 else {
                     System.out.println("622 - Worker: <" + type + ">... NULL INPUTSTREAM FOR KEY = " + start);
